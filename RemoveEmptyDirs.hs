@@ -12,7 +12,7 @@ import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Optio
 import System.Directory (doesDirectoryExist, getDirectoryContents, removeFile)
 import System.FilePath ((</>))
 import System.Environment (getArgs, getProgName)
-import System.Log.Logger (Priority(CRITICAL), errorM, setLevel, updateGlobalLogger)
+import System.Log.Logger (Priority(CRITICAL, DEBUG, INFO), errorM, setLevel, updateGlobalLogger)
 
 loggerName :: String
 loggerName = "RemoveEmptyDirs"
@@ -27,7 +27,9 @@ main = do
 parseArgs :: [String] -> IO ([Priority], [FilePath])
 parseArgs args =
   let options = [
-        Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages"
+        Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages",
+        Option "v" ["verbose"] (NoArg INFO) "print informational messages",
+        Option "d" ["debug"] (NoArg DEBUG) "print debug messages"
         ]
   in case getOpt Permute options args of
     (dirs, opts, []) -> return (dirs, opts)
