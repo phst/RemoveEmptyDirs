@@ -55,8 +55,12 @@ traverse dir = do
       removeDir = do
         success <- removeJunk
         let remove = do
-              removeDirectory dir
-              return Ignore
+              res <- tryIOError $ removeDirectory dir
+              case res of
+                Right _ -> return Ignore
+                Left ex -> do
+                  warn ex
+                  returnDir
         if success then remove else returnDir
   if all junkFile entries then removeDir else returnDir
 
