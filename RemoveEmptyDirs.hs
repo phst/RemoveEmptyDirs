@@ -7,8 +7,9 @@
 -- You should have received a copy of the CC0 Public Domain Dedication along with
 -- this software.  If not, see http://creativecommons.org/publicdomain/zero/1.0/.
 
+import Control.Applicative ((<$>))
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
-import System.Directory (doesDirectoryExist, getDirectoryContents, removeFile)
+import System.Directory (doesDirectoryExist, getDirectoryContents, removeDirectory, removeFile)
 import System.Environment (getArgs, getProgName)
 import System.FilePath ((</>))
 import System.IO.Error (tryIOError)
@@ -64,8 +65,7 @@ traverse dir = do
       junkFile (JunkFile _) = True
       junkFile _ = False
       entries = filter ignore contents
-      returnDir = return $ Directory dir
-      removeDir = do
+      removeJunk =
         let remove (JunkFile f) = do
               res <- tryIOError $ removeFile f
               case res of
@@ -74,8 +74,14 @@ traverse dir = do
                   warn ex
                   return False
             remove _ = error "remove applied to invalid entry"
-        successful <- mapM remove entries
-        return $ if and successful then Ignore else Directory dir
+        in and <$> mapM remove entries
+      returnDir = return $ Directory dir
+      removeDir = do
+        success <- removeJunk
+        let remove = do
+              removeDirectory dir
+              return Ignore
+        if success then remove else returnDir
   if all junkFile entries then removeDir else returnDir
 
 data Entry = Ignore
