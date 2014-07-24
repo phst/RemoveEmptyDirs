@@ -8,15 +8,36 @@
 -- this software.  If not, see http://creativecommons.org/publicdomain/zero/1.0/.
 
 import System.IO.Error (tryIOError)
+import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Directory (doesDirectoryExist, getDirectoryContents, removeFile)
 import System.FilePath ((</>))
-import System.Environment (getArgs)
-import System.Log.Logger (errorM)
+import System.Environment (getArgs, getProgName)
+import System.Log.Logger (Priority(CRITICAL), errorM, setLevel, updateGlobalLogger)
+
+loggerName :: String
+loggerName = "RemoveEmptyDirs"
 
 main :: IO ()
 main = do
-  dirs <- getArgs
+  args <- getArgs
+  (opts, dirs) <- parseArgs args
+  mapM_ applyOption opts
   mapM_ traverse dirs
+
+parseArgs :: [String] -> IO ([Priority], [FilePath])
+parseArgs args =
+  let options = [
+        Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages"
+        ]
+  in case getOpt Permute options args of
+    (dirs, opts, []) -> return (dirs, opts)
+    (_, _, errors) -> do
+      program <- getProgName
+      let header = "Usage: " ++ program ++ " [options] directories"
+      ioError $ userError $ concat errors ++ usageInfo header options
+
+applyOption :: Priority -> IO ()
+applyOption prio = updateGlobalLogger loggerName $ setLevel prio
 
 traverse :: FilePath -> IO Entry
 traverse dir = do
@@ -61,4 +82,4 @@ data Entry = Ignore
              | Directory FilePath
 
 warn :: IOError -> IO ()
-warn ex = errorM "RemoveEmptyDirs" $ show ex
+warn ex = errorM loggerName $ show ex
