@@ -18,7 +18,20 @@ category:            System
 build-type:          Simple
 cabal-version:       >=1.8
 
+library
+  ghc-options:       -Wall -Werror
+  exposed-modules:   RemoveEmptyDirs
+  build-depends:
+    base ==4.6.*,
+    directory ==1.2.*,
+    filepath ==1.3.*,
+    hslogger ==1.2.*
+
 executable RemoveEmptyDirs
-  main-is:             RemoveEmptyDirs.hs
-  build-depends:       base ==4.6.*, directory ==1.2.*, filepath ==1.3.*, hslogger ==1.2.*
-  ghc-options:         -Wall -Werror
+  main-is:           Main.hs
+  ghc-options:       -Wall -Werror
+  build-depends:
+    base ==4.6.*,
+    directory ==1.2.*,
+    filepath ==1.3.*,
+    hslogger ==1.2.*

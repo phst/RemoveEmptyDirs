@@ -7,40 +7,16 @@
 -- You should have received a copy of the CC0 Public Domain Dedication along with
 -- this software.  If not, see http://creativecommons.org/publicdomain/zero/1.0/.
 
+module RemoveEmptyDirs (run, setLogLevel) where
+
 import Control.Applicative ((<$>))
-import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Directory (doesDirectoryExist, getDirectoryContents, removeDirectory, removeFile)
-import System.Environment (getArgs, getProgName)
 import System.FilePath ((</>))
 import System.IO.Error (tryIOError)
-import System.Log.Logger (Priority(CRITICAL, DEBUG, INFO), errorM, setLevel, updateGlobalLogger)
+import System.Log.Logger (Priority, errorM, setLevel, updateGlobalLogger)
 
-loggerName :: String
-loggerName = "RemoveEmptyDirs"
-
-main :: IO ()
-main = do
-  args <- getArgs
-  (opts, dirs) <- parseArgs args
-  mapM_ applyOption opts
-  mapM_ traverse dirs
-
-parseArgs :: [String] -> IO ([Priority], [FilePath])
-parseArgs args =
-  let options = [
-        Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages",
-        Option "v" ["verbose"] (NoArg INFO) "print informational messages",
-        Option "d" ["debug"] (NoArg DEBUG) "print debug messages"
-        ]
-  in case getOpt Permute options args of
-    (opts, dirs, []) -> return (opts, dirs)
-    (_, _, errors) -> do
-      program <- getProgName
-      let header = "Usage: " ++ program ++ " [options] directories"
-      ioError $ userError $ concat errors ++ usageInfo header options
-
-applyOption :: Priority -> IO ()
-applyOption prio = updateGlobalLogger loggerName $ setLevel prio
+run :: [FilePath] -> IO ()
+run = mapM_ traverse
 
 traverse :: FilePath -> IO Entry
 traverse dir = do
@@ -91,3 +67,9 @@ data Entry = Ignore
 
 warn :: IOError -> IO ()
 warn ex = errorM loggerName $ show ex
+
+setLogLevel :: Priority -> IO ()
+setLogLevel prio = updateGlobalLogger loggerName $ setLevel prio
+
+loggerName :: String
+loggerName = "RemoveEmptyDirs"
