@@ -7,11 +7,11 @@
 -- You should have received a copy of the CC0 Public Domain Dedication along with
 -- this software.  If not, see http://creativecommons.org/publicdomain/zero/1.0/.
 
-import System.IO.Error (tryIOError)
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Directory (doesDirectoryExist, getDirectoryContents, removeFile)
-import System.FilePath ((</>))
 import System.Environment (getArgs, getProgName)
+import System.FilePath ((</>))
+import System.IO.Error (tryIOError)
 import System.Log.Logger (Priority(CRITICAL, DEBUG, INFO), errorM, setLevel, updateGlobalLogger)
 
 loggerName :: String
