@@ -32,7 +32,7 @@ parseArgs args =
         Option "d" ["debug"] (NoArg DEBUG) "print debug messages"
         ]
   in case getOpt Permute options args of
-    (dirs, opts, []) -> return (dirs, opts)
+    (opts, dirs, []) -> return (opts, dirs)
     (_, _, errors) -> do
       program <- getProgName
       let header = "Usage: " ++ program ++ " [options] directories"
