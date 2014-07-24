@@ -40,7 +40,7 @@ traverse dir = do
       ignore _ = False
       junkFile (JunkFile _) = True
       junkFile _ = False
-      entries = filter ignore contents
+      entries = filter (not . ignore) contents
       removeJunk =
         let remove (JunkFile f) = do
               res <- tryIOError $ removeFile f
