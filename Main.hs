@@ -35,9 +35,9 @@ applyOption = setLogLevel
 
 options :: [OptDescr Priority]
 options = [
+  Option "d" ["debug"] (NoArg DEBUG) "print debug messages",
   Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages",
-  Option "v" ["verbose"] (NoArg INFO) "print informational messages",
-  Option "d" ["debug"] (NoArg DEBUG) "print debug messages"]
+  Option "v" ["verbose"] (NoArg INFO) "print informational messages"]
 
 usageError :: String -> IO a
 usageError message = do
