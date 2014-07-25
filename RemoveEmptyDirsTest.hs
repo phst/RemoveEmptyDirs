@@ -111,7 +111,8 @@ cases = [
   tempDirCase "only junk files" onlyJunk,
   tempDirCase "junk and precious files" junkAndPrecious,
   tempDirCase "subdirectory" subdirectory,
-  tempDirCase "existing and non-existing directories" existingAndNonExisting
+  tempDirCase "existing and non-existing directories" existingAndNonExisting,
+  tempDirCase "complex" complex
   ]
 
 nonExistingDir :: TempDirTest
@@ -155,3 +156,13 @@ existingAndNonExisting = do
   prepare [Directory "foo" []]
   assertThrows $ run ["bar", "foo"]
   assert [Directory "foo" []]
+
+complex :: TempDirTest
+complex = do
+  prepare [Directory "foo" [".DS_Store"],
+           Directory "foo/bar" ["precious"],
+           Directory "foo/bar/baz" [".DS_Store"],
+           Directory "qux" []]
+  run ["foo", "qux"]
+  assert [Directory "foo" [".DS_Store"],
+          Directory "foo/bar" ["precious"]]
