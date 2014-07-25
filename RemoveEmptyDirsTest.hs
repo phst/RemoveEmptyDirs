@@ -34,10 +34,10 @@ type FixtureTest a = ReaderT a IO ()
 type FixtureWrapper a = (a -> Assertion) -> Assertion
 
 runFixtureTest :: FixtureWrapper a -> FixtureTest a -> IO ()
-runFixtureTest wrap test = wrap $ runReaderT test
+runFixtureTest wrap = wrap . runReaderT
 
 fixtureTestCase :: FixtureWrapper a -> TestName -> FixtureTest a -> Test
-fixtureTestCase wrap name test = testCase name (runFixtureTest wrap test)
+fixtureTestCase wrap name = testCase name . runFixtureTest wrap
 
 newtype TempDirFixture = TempDirFixture FilePath
 type TempDirTest = FixtureTest TempDirFixture
@@ -46,7 +46,7 @@ inTempDir :: TestName -> FixtureWrapper TempDirFixture
 inTempDir name fn = withTemporaryDirectory ("HUnit test: " ++ name ++ ". XXXXXX") (fn . TempDirFixture)
 
 tempDirCase :: TestName -> TempDirTest -> Test
-tempDirCase name = fixtureTestCase (inTempDir name) name
+tempDirCase = inTempDir >>= fixtureTestCase
 
 data Directory = Directory {
   dirName :: String,
