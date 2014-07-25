@@ -21,8 +21,7 @@ import System.IO.Error (tryIOError)
 import System.Log.Logger (Priority(DEBUG))
 import System.Posix (isDirectory)
 import System.Unix.Directory (find, withTemporaryDirectory)
-import Test.Framework (defaultMain)
-import qualified Test.Framework as Framework
+import Test.Framework (Test, TestName, defaultMain)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.HUnit (Assertion, assertEqual, assertFailure)
 
@@ -31,45 +30,57 @@ import qualified RemoveEmptyDirs
 main :: IO ()
 main = defaultMain cases
 
-newtype Fixture = Fixture FilePath
-type Test = ReaderT Fixture IO ()
+type FixtureTest a = ReaderT a IO ()
+type FixtureWrapper a = (a -> Assertion) -> Assertion
 
-makeCase :: String -> Test -> Framework.Test
-makeCase name test = testCase name $ withTemporaryDirectory ("HUnit test: " ++ name ++ ". XXXXXX") $ runReaderT test . Fixture
+runFixtureTest :: FixtureWrapper a -> FixtureTest a -> IO ()
+runFixtureTest wrap test = wrap $ runReaderT test
+
+fixtureTestCase :: FixtureWrapper a -> TestName -> FixtureTest a -> Test
+fixtureTestCase wrap name test = testCase name (runFixtureTest wrap test)
+
+newtype TempDirFixture = TempDirFixture FilePath
+type TempDirTest = FixtureTest TempDirFixture
+
+inTempDir :: TestName -> FixtureWrapper TempDirFixture
+inTempDir name fn = withTemporaryDirectory ("HUnit test: " ++ name ++ ". XXXXXX") (fn . TempDirFixture)
+
+tempDirCase :: TestName -> TempDirTest -> Test
+tempDirCase name = fixtureTestCase (inTempDir name) name
 
 data Directory = Directory {
   dirName :: String,
   dirFiles :: [String]
   } deriving (Show, Eq, Ord)
 
-prepare :: [Directory] -> Test
+prepare :: [Directory] -> TempDirTest
 prepare dirs = do
   f <- ask
   lift $ prepareIn f dirs
 
-prepareIn :: Fixture -> [Directory] -> IO ()
-prepareIn (Fixture root) dirs = do
+prepareIn :: TempDirFixture -> [Directory] -> IO ()
+prepareIn (TempDirFixture root) dirs = do
   RemoveEmptyDirs.setLogLevel DEBUG
   forM_ dirs $ \(Directory dir files) -> do
     let path = root </> dir
     createDirectoryIfMissing True path
     forM_ files $ \f -> writeFile (path </> f) "test"
 
-run :: [FilePath] -> Test
+run :: [FilePath] -> TempDirTest
 run dirs = do
   f <- ask
   lift $ runIn f dirs
 
-runIn :: Fixture -> [FilePath] -> IO ()
-runIn (Fixture root) dirs = RemoveEmptyDirs.run $ map (root </>) dirs
+runIn :: TempDirFixture -> [FilePath] -> IO ()
+runIn (TempDirFixture root) dirs = RemoveEmptyDirs.run $ map (root </>) dirs
 
-assert :: [Directory] -> Test
+assert :: [Directory] -> TempDirTest
 assert expected = do
   f <- ask
   lift $ assertIn f expected
 
-assertIn :: Fixture -> [Directory] -> Assertion
-assertIn (Fixture root) expected = do
+assertIn :: TempDirFixture -> [Directory] -> Assertion
+assertIn (TempDirFixture root) expected = do
   entries <- find root
   let conv "." _ = Nothing
       conv p s | isDirectory s = Just $ Directory p []
@@ -80,66 +91,66 @@ assertIn (Fixture root) expected = do
       actual = map merge $ groupBy ((==) `on` dirName) $ sort $ mapMaybe conv' entries
   assertEqual "directory structure after run incorrect" expected actual
 
-assertThrows :: Test -> Test
+assertThrows :: TempDirTest -> TempDirTest
 assertThrows fn = do
   f <- ask
   mapReaderT (assertThrowsIn f) fn
 
-assertThrowsIn :: Fixture -> IO a -> Assertion
+assertThrowsIn :: TempDirFixture -> IO a -> Assertion
 assertThrowsIn _ fn = do
   res <- tryIOError fn
   case res of
     Left _ -> return ()
     Right _ -> assertFailure "expected IOError"
 
-cases :: [Framework.Test]
+cases :: [Test]
 cases = [
-  makeCase "non-existing directory" nonExistingDir,
-  makeCase "nothing to do" nothing,
-  makeCase "empty directory" emptyDir,
-  makeCase "only junk files" onlyJunk,
-  makeCase "junk and precious files" junkAndPrecious,
-  makeCase "subdirectory" subdirectory,
-  makeCase "existing and non-existing directories" existingAndNonExisting
+  tempDirCase "non-existing directory" nonExistingDir,
+  tempDirCase "nothing to do" nothing,
+  tempDirCase "empty directory" emptyDir,
+  tempDirCase "only junk files" onlyJunk,
+  tempDirCase "junk and precious files" junkAndPrecious,
+  tempDirCase "subdirectory" subdirectory,
+  tempDirCase "existing and non-existing directories" existingAndNonExisting
   ]
 
-nonExistingDir :: Test
+nonExistingDir :: TempDirTest
 nonExistingDir = do
   prepare []
   assertThrows $ run ["foo"]
   assert []
 
-nothing :: Test
+nothing :: TempDirTest
 nothing = do
   prepare []
   run []
   assert []
 
-emptyDir :: Test
+emptyDir :: TempDirTest
 emptyDir = do
   prepare [Directory "foo" []]
   run ["foo"]
   assert []
 
-onlyJunk :: Test
+onlyJunk :: TempDirTest
 onlyJunk = do
   prepare [Directory "foo" [".DS_Store"]]
   run ["foo"]
   assert []
 
-junkAndPrecious :: Test
+junkAndPrecious :: TempDirTest
 junkAndPrecious = do
   prepare [Directory "foo" [".DS_Store", "precious"]]
   run ["foo"]
   assert [Directory "foo" [".DS_Store", "precious"]]
 
-subdirectory :: Test
+subdirectory :: TempDirTest
 subdirectory = do
   prepare [Directory "foo" [], Directory "foo/bar" ["precious"]]
   run ["foo"]
   assert [Directory "foo" [], Directory "foo/bar" ["precious"]]
 
-existingAndNonExisting :: Test
+existingAndNonExisting :: TempDirTest
 existingAndNonExisting = do
   prepare [Directory "foo" []]
   assertThrows $ run ["bar", "foo"]
