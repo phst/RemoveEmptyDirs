@@ -16,7 +16,7 @@ import Data.Function (on)
 import Data.Maybe (mapMaybe)
 import Data.List (groupBy, sort)
 import System.Directory (createDirectoryIfMissing)
-import System.FilePath ((</>), takeDirectory)
+import System.FilePath ((</>), makeRelative, takeDirectory)
 import System.IO.Error (tryIOError)
 import System.Log.Logger (Priority(DEBUG))
 import System.Posix (isDirectory)
@@ -77,11 +77,13 @@ assert expected = do
 assertIn :: Fixture -> [Directory] -> Assertion
 assertIn (Fixture root) expected = do
   entries <- find root
-  let conv (p, s) | p == root = Nothing
-                  | isDirectory s = Just $ Directory p []
-                  | otherwise = Just $ Directory (takeDirectory p) [p]
+  let conv "." _ = Nothing
+      conv p s | isDirectory s = Just $ Directory p []
+               | otherwise = let dir = takeDirectory p
+                             in Just $ Directory dir [makeRelative dir p]
+      conv' = uncurry $ conv . makeRelative root
       merge dirs = Directory (dirName $ head dirs) (sort $ concatMap dirFiles dirs)
-      actual = map merge $ groupBy ((==) `on` dirName) $ sort $ mapMaybe conv entries
+      actual = map merge $ groupBy ((==) `on` dirName) $ sort $ mapMaybe conv' entries
   assertEqual "directory structure after run incorrect" expected actual
 
 assertThrows :: Test -> Test
