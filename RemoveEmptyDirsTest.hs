@@ -58,8 +58,9 @@ prepareIn :: Fixture -> [Directory] -> IO ()
 prepareIn (Fixture root) dirs = do
   RemoveEmptyDirs.setLogLevel DEBUG
   forM_ dirs $ \(Directory dir files) -> do
-    createDirectoryIfMissing True (root </> dir)
-    forM_ files $ \f -> writeFile (dir </> f) "test"
+    let path = root </> dir
+    createDirectoryIfMissing True path
+    forM_ files $ \f -> writeFile (path </> f) "test"
 
 run :: [FilePath] -> Test
 run dirs = do
