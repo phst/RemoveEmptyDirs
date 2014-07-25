@@ -10,11 +10,14 @@
 module Main (main) where
 
 import Data.String.Utils (rstrip)
+import Data.Version (showVersion)
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Environment (getArgs, getProgName)
+import System.Exit (exitSuccess)
 import System.IO (hPutStrLn, stderr)
 import System.Log.Logger (Priority(CRITICAL, DEBUG, INFO))
 
+import Paths_remove_empty_dirs (version)
 import RemoveEmptyDirs (run, setLogLevel)
 
 main :: IO ()
@@ -24,20 +27,28 @@ main = do
   mapM_ applyOption opts
   run dirs
 
-parseArgs :: [String] -> IO ([Priority], [FilePath])
+parseArgs :: [String] -> IO ([Action], [FilePath])
 parseArgs args = case getOpt Permute options args of
   (_, [], []) -> usageError "no directories given"
   (opts, dirs, []) -> return (opts, dirs)
   (_, _, errors) -> usageError $ rstrip $ concat errors
 
-applyOption :: Priority -> IO ()
-applyOption = setLogLevel
+data Action = PrintUsage
+            | PrintVersion
+            | SetLogLevel Priority
 
-options :: [OptDescr Priority]
+applyOption :: Action -> IO ()
+applyOption PrintUsage = printUsage >> exitSuccess
+applyOption PrintVersion = printVersion >> exitSuccess
+applyOption (SetLogLevel prio) = setLogLevel prio
+
+options :: [OptDescr Action]
 options = [
-  Option "d" ["debug"] (NoArg DEBUG) "print debug messages",
-  Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages",
-  Option "v" ["verbose"] (NoArg INFO) "print informational messages"]
+  Option "d" ["debug"] (NoArg $ SetLogLevel DEBUG) "print debug messages",
+  Option "h" ["help"] (NoArg PrintUsage) "print this usage information and exit",
+  Option "q" ["quiet"] (NoArg $ SetLogLevel CRITICAL) "don't print error messages",
+  Option "v" ["verbose"] (NoArg $ SetLogLevel INFO) "print informational messages",
+  Option "V" ["version"] (NoArg PrintVersion) "print version number and exit"]
 
 usageError :: String -> IO a
 usageError message = do
@@ -49,3 +60,8 @@ printUsage = do
   program <- getProgName
   let header = "Usage: " ++ program ++ " [options] directories"
   hPutStrLn stderr $ usageInfo header options
+
+printVersion :: IO ()
+printVersion = do
+  program <- getProgName
+  hPutStrLn stderr $ program ++ " " ++ showVersion version
