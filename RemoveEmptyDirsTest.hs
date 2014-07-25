@@ -31,13 +31,6 @@ import qualified RemoveEmptyDirs
 main :: IO ()
 main = defaultMain cases
 
-cases :: [Framework.Test]
-cases = [
-  makeCase "non-existing directory" nonExistingDir,
-  makeCase "nothing to do" nothing,
-  makeCase "empty directory" emptyDir
-  ]
-
 newtype Fixture = Fixture FilePath
 type Test = ReaderT Fixture IO ()
 
@@ -99,6 +92,17 @@ assertThrowsIn _ fn = do
     Left _ -> return ()
     Right _ -> assertFailure "expected IOError"
 
+cases :: [Framework.Test]
+cases = [
+  makeCase "non-existing directory" nonExistingDir,
+  makeCase "nothing to do" nothing,
+  makeCase "empty directory" emptyDir,
+  makeCase "only junk files" onlyJunk,
+  makeCase "junk and precious files" junkAndPrecious,
+  makeCase "subdirectory" subdirectory,
+  makeCase "existing and non-existing directories" existingAndNonExisting
+  ]
+
 nonExistingDir :: Test
 nonExistingDir = do
   prepare []
@@ -115,3 +119,27 @@ emptyDir = do
   prepare [Directory "foo" []]
   run ["foo"]
   assert []
+
+onlyJunk :: Test
+onlyJunk = do
+  prepare [Directory "foo" [".DS_Store"]]
+  run ["foo"]
+  assert []
+
+junkAndPrecious :: Test
+junkAndPrecious = do
+  prepare [Directory "foo" [".DS_Store", "precious"]]
+  run ["foo"]
+  assert [Directory "foo" [".DS_Store", "precious"]]
+
+subdirectory :: Test
+subdirectory = do
+  prepare [Directory "foo" [], Directory "foo/bar" ["precious"]]
+  run ["foo"]
+  assert [Directory "foo" [], Directory "foo/bar" ["precious"]]
+
+existingAndNonExisting :: Test
+existingAndNonExisting = do
+  prepare [Directory "foo" []]
+  assertThrows $ run ["bar", "foo"]
+  assert [Directory "foo" []]
