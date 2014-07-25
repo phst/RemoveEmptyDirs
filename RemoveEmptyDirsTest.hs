@@ -107,6 +107,7 @@ nonExistingDir :: Test
 nonExistingDir = do
   prepare []
   assertThrows $ run ["foo"]
+  assert []
 
 nothing :: Test
 nothing = do
