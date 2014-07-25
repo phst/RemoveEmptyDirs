@@ -9,9 +9,9 @@
 
 module Main (main) where
 
-import Control.Monad (when)
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Environment (getArgs, getProgName)
+import System.IO (hPutStrLn, stderr)
 import System.Log.Logger (Priority(CRITICAL, DEBUG, INFO))
 
 import RemoveEmptyDirs (run, setLogLevel)
@@ -20,23 +20,31 @@ main :: IO ()
 main = do
   args <- getArgs
   (opts, dirs) <- parseArgs args
-  when (null dirs) $ ioError $ userError "no directories given"
   mapM_ applyOption opts
   run dirs
 
 parseArgs :: [String] -> IO ([Priority], [FilePath])
-parseArgs args =
-  let options = [
-        Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages",
-        Option "v" ["verbose"] (NoArg INFO) "print informational messages",
-        Option "d" ["debug"] (NoArg DEBUG) "print debug messages"
-        ]
-  in case getOpt Permute options args of
-    (opts, dirs, []) -> return (opts, dirs)
-    (_, _, errors) -> do
-      program <- getProgName
-      let header = "Usage: " ++ program ++ " [options] directories"
-      ioError $ userError $ concat errors ++ usageInfo header options
+parseArgs args = case getOpt Permute options args of
+  (_, [], []) -> usageError "no directories given"
+  (opts, dirs, []) -> return (opts, dirs)
+  (_, _, errors) -> usageError $ concat errors
 
 applyOption :: Priority -> IO ()
 applyOption = setLogLevel
+
+options :: [OptDescr Priority]
+options = [
+  Option "q" ["quiet"] (NoArg CRITICAL) "don't print error messages",
+  Option "v" ["verbose"] (NoArg INFO) "print informational messages",
+  Option "d" ["debug"] (NoArg DEBUG) "print debug messages"]
+
+usageError :: String -> IO a
+usageError message = do
+  printUsage
+  ioError $ userError message
+
+printUsage :: IO ()
+printUsage = do
+  program <- getProgName
+  let header = "Usage: " ++ program ++ " [options] directories"
+  hPutStrLn stderr $ usageInfo header options
