@@ -9,6 +9,7 @@
 
 module Main (main) where
 
+import Control.Monad (when)
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Environment (getArgs, getProgName)
 import System.Log.Logger (Priority(CRITICAL, DEBUG, INFO))
@@ -19,6 +20,7 @@ main :: IO ()
 main = do
   args <- getArgs
   (opts, dirs) <- parseArgs args
+  when (null dirs) $ ioError $ userError "no directories given"
   mapM_ applyOption opts
   run dirs
 
