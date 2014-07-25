@@ -18,6 +18,7 @@ import Data.List (groupBy, sort)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>), takeDirectory)
 import System.IO.Error (tryIOError)
+import System.Log.Logger (Priority(DEBUG))
 import System.Posix (isDirectory)
 import System.Unix.Directory (find, withTemporaryDirectory)
 import Test.Framework (defaultMain)
@@ -54,7 +55,8 @@ prepare dirs = do
   lift $ prepareIn f dirs
 
 prepareIn :: Fixture -> [Directory] -> IO ()
-prepareIn (Fixture root) dirs =
+prepareIn (Fixture root) dirs = do
+  RemoveEmptyDirs.setLogLevel DEBUG
   forM_ dirs $ \(Directory dir files) -> do
     createDirectoryIfMissing True (root </> dir)
     forM_ files $ \f -> writeFile (dir </> f) "test"
