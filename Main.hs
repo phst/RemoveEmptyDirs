@@ -9,6 +9,7 @@
 
 module Main (main) where
 
+import Control.Monad (when)
 import Data.String.Utils (rstrip)
 import Data.Version (showVersion)
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
@@ -25,11 +26,11 @@ main = do
   args <- getArgs
   (opts, dirs) <- parseArgs args
   mapM_ applyOption opts
+  when (null dirs) $ usageError "no directories given"
   run dirs
 
 parseArgs :: [String] -> IO ([Action], [FilePath])
 parseArgs args = case getOpt Permute options args of
-  (_, [], []) -> usageError "no directories given"
   (opts, dirs, []) -> return (opts, dirs)
   (_, _, errors) -> usageError $ rstrip $ concat errors
 
