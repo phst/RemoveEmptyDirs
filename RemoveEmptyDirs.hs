@@ -36,7 +36,7 @@ traverse dir = do
               case res of
                 Right r -> return r
                 Left ex -> do
-                  warn ex
+                  err $ show ex
                   return $ Directory path
             processFile = do
               debug $ "processing precious file " ++ path
@@ -59,7 +59,7 @@ traverse dir = do
                   info $ "removed junk file " ++ f
                   return True
                 Left ex -> do
-                  warn ex
+                  err $ show ex
                   return False
             remove _ = error "remove applied to invalid entry"
         and <$> mapM remove entries
@@ -77,7 +77,7 @@ traverse dir = do
                   info $ "removed empty directory " ++ dir
                   return Ignore
                 Left ex -> do
-                  warn ex
+                  err $ show ex
                   returnDir
         if success then remove else returnDir
   if all junkFile entries then removeDir else returnDir
@@ -87,8 +87,6 @@ data Entry = Ignore
              | JunkFile FilePath
              | Directory FilePath
 
-warn :: IOError -> IO ()
-warn ex = errorM loggerName $ show ex
 err :: String -> IO ()
 err = errorM loggerName
 
