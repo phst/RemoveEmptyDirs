@@ -35,7 +35,7 @@ newtype Fixture = Fixture FilePath
 type Test = ReaderT Fixture IO ()
 
 makeCase :: String -> Test -> Framework.Test
-makeCase name test = testCase name $ withTemporaryDirectory "HUnitXXXXXX" $ runReaderT test . Fixture
+makeCase name test = testCase name $ withTemporaryDirectory ("HUnit test: " ++ name ++ ". XXXXXX") $ runReaderT test . Fixture
 
 data Directory = Directory {
   dirName :: String,
