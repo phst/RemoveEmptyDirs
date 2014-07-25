@@ -9,6 +9,7 @@
 
 module Main (main) where
 
+import Data.String.Utils (rstrip)
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Environment (getArgs, getProgName)
 import System.IO (hPutStrLn, stderr)
@@ -27,7 +28,7 @@ parseArgs :: [String] -> IO ([Priority], [FilePath])
 parseArgs args = case getOpt Permute options args of
   (_, [], []) -> usageError "no directories given"
   (opts, dirs, []) -> return (opts, dirs)
-  (_, _, errors) -> usageError $ concat errors
+  (_, _, errors) -> usageError $ rstrip $ concat errors
 
 applyOption :: Priority -> IO ()
 applyOption = setLogLevel

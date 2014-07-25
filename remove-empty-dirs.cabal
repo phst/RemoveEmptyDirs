@@ -25,7 +25,8 @@ executable rmedirs
     base ==4.6.*,
     directory ==1.2.*,
     filepath ==1.3.*,
-    hslogger ==1.2.*
+    hslogger ==1.2.*,
+    MissingH ==1.2.*
 
 test-suite tests
   main-is:           RemoveEmptyDirsTest.hs
