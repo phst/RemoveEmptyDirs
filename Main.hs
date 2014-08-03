@@ -15,7 +15,7 @@ import Data.Version (showVersion)
 import System.Console.GetOpt (ArgDescr(NoArg), ArgOrder(Permute), OptDescr(Option), getOpt, usageInfo)
 import System.Environment (getArgs, getProgName)
 import System.Exit (exitSuccess)
-import System.IO (hPutStrLn, stderr)
+import System.IO (hPutStr, hPutStrLn, stderr)
 import System.Log.Logger (Priority(CRITICAL, DEBUG, INFO))
 
 import Paths_remove_empty_dirs (version)
@@ -60,7 +60,7 @@ printUsage :: IO ()
 printUsage = do
   program <- getProgName
   let header = "Usage: " ++ program ++ " [options] directories"
-  hPutStrLn stderr $ usageInfo header options
+  hPutStr stderr $ usageInfo header options
 
 printVersion :: IO ()
 printVersion = do
