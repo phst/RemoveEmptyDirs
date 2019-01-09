@@ -9,6 +9,7 @@
 
 module RemoveEmptyDirs (run, setLogLevel) where
 
+import Prelude hiding (traverse)
 import Control.Applicative ((<$>))
 import Control.Monad (when)
 import System.Directory (doesDirectoryExist, getDirectoryContents, removeDirectory, removeFile)
