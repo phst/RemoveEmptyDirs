@@ -24,7 +24,7 @@ traverse dir = do
   debug $ "traversing directory " ++ dir
   let process "." = return Ignore
       process ".." = return Ignore
-      process name@".DS_Store" = do
+      process name | name == ".DS_Store" || name == "Icon\r" = do
         let path = dir </> name
         debug $ "processing junk file " ++ path
         return $ JunkFile path

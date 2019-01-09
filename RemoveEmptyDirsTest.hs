@@ -135,15 +135,15 @@ emptyDir = do
 
 onlyJunk :: TempDirTest
 onlyJunk = do
-  prepare [Directory "foo" [".DS_Store"]]
+  prepare [Directory "foo" [".DS_Store", "Icon\r"]]
   run ["foo"]
   assert []
 
 junkAndPrecious :: TempDirTest
 junkAndPrecious = do
-  prepare [Directory "foo" [".DS_Store", "precious"]]
+  prepare [Directory "foo" [".DS_Store", "precious", "Icon\r"]]
   run ["foo"]
-  assert [Directory "foo" [".DS_Store", "precious"]]
+  assert [Directory "foo" [".DS_Store", "Icon\r", "precious"]]
 
 subdirectory :: TempDirTest
 subdirectory = do
@@ -161,7 +161,7 @@ complex :: TempDirTest
 complex = do
   prepare [Directory "foo" [".DS_Store"],
            Directory "foo/bar" ["precious"],
-           Directory "foo/bar/baz" [".DS_Store"],
+           Directory "foo/bar/baz" ["Icon\r", ".DS_Store"],
            Directory "qux" []]
   run ["foo", "qux"]
   assert [Directory "foo" [".DS_Store"],
